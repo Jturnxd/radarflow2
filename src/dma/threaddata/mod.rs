@@ -188,22 +188,13 @@ impl CsData {
             .map(|(controller, pawn)| (controller, pawn.unwrap()))
             .collect();
 
-        if new_players.is_empty() {
-            log::warn!(
-                "update_players resolved 0 remote players (controllers_scanned={} local={:#x} pawn={:#x}); run with --loglevel debug for per-index details",
-                controller_debug.len(),
-                self.local,
-                self.local_pawn
-            );
-        } else {
-            log::debug!(
-                "update_players summary: controllers={} resolved={} (local={:#x} pawn={:#x})",
-                controller_debug.len(),
-                new_players.len(),
-                self.local,
-                self.local_pawn
-            );
-        }
+        log::debug!(
+            "update_players summary: controllers={} resolved={} (local={:#x} pawn={:#x})",
+            controller_debug.len(),
+            new_players.len(),
+            self.local,
+            self.local_pawn
+        );
 
         for entry in controller_debug {
             log::trace!("update_players detail: {}", entry);
