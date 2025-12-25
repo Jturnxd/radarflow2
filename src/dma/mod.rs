@@ -128,11 +128,22 @@ pub async fn run(radar_data: ArcRwlockRadarData, connector: Connector, pcileech_
         // Poll entity data
         let ingame = !data.map.is_empty() && data.map != "<empty>";
         let update_data = data.tick_count != last_tick_count;
-    
+
         if ingame {
             if !update_data {
                 continue;
             }
+
+            log::debug!(
+                "tick {} map={} players={} bomb_dropped={} bomb_planted={} local_ctrl={:#x} local_pawn={:#x}",
+                data.tick_count,
+                data.map,
+                data.players.len(),
+                data.bomb_dropped,
+                data.bomb_planted,
+                data.local,
+                data.local_pawn
+            );
 
             let mut entity_data = Vec::new();
 
