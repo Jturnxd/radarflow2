@@ -134,11 +134,37 @@ impl CsData {
         }
 
         let mut new_players: Vec<u64> = Vec::new();
+        let mut controller_debug: Vec<String> = Vec::new();
         player_ptrs
             .into_iter()
-            .for_each(|ptr| {
-                if ctx.is_cs_player_controller(ptr.into()).unwrap_or(false) {
-                    new_players.push(ptr)
+            .enumerate()
+            .for_each(|(idx, ptr)| {
+                let ptr_addr: Address = ptr.into();
+
+                if ptr_addr.is_null() {
+                    controller_debug.push(format!(
+                        "idx {} skipped: controller pointer was null (list_entry={:#x})",
+                        idx, list_entries[idx]
+                    ));
+                    return;
+                }
+
+                match ctx.is_cs_player_controller(ptr_addr) {
+                    Ok(true) => {
+                        controller_debug.push(format!(
+                            "idx {} matched controller: controller={:#x} list_entry={:#x}",
+                            idx, ptr, list_entries[idx]
+                        ));
+                        new_players.push(ptr)
+                    }
+                    Ok(false) => controller_debug.push(format!(
+                        "idx {} not controller: controller={:#x} list_entry={:#x}",
+                        idx, ptr, list_entries[idx]
+                    )),
+                    Err(err) => controller_debug.push(format!(
+                        "idx {} controller check error for {:#x} (list_entry={:#x}): {}",
+                        idx, ptr, list_entries[idx], err
+                    )),
                 }
             });
 
@@ -148,12 +174,31 @@ impl CsData {
             .filter(|ptr| !ptr.is_null())
             .filter(|ptr| *ptr != self.local.into())
             .map(|ptr| {
-                let pawn = ctx.pawn_from_controller(ptr, self.entity_list.into()).unwrap();
+                let pawn = match ctx.pawn_from_controller(ptr, self.entity_list.into()) {
+                    Ok(pawn) => pawn,
+                    Err(err) => {
+                        log::warn!("failed to resolve pawn for controller {:#x}: {}", ptr, err);
+                        None
+                    }
+                };
+
                 (ptr, pawn)
             })
             .filter(|(_, pawn)| pawn.is_some())
             .map(|(controller, pawn)| (controller, pawn.unwrap()))
             .collect();
+
+        log::debug!(
+            "update_players summary: controllers={} resolved={} (local={:#x} pawn={:#x})",
+            controller_debug.len(),
+            new_players.len(),
+            self.local,
+            self.local_pawn
+        );
+
+        for entry in controller_debug {
+            log::trace!("update_players detail: {}", entry);
+        }
 
         self.players = new_players;
     }
