@@ -22,6 +22,7 @@ pub async fn run(radar_data: ArcRwlockRadarData, connector: Connector, pcileech_
     let mut last_freeze_period = false;
     let mut last_round_start_count = 0u8;
     let mut last_tick_count = 0;
+    let mut last_remote_players_empty = false;
     let mut last_big_read = Instant::now();
 
     // For frequency info
@@ -128,11 +129,22 @@ pub async fn run(radar_data: ArcRwlockRadarData, connector: Connector, pcileech_
         // Poll entity data
         let ingame = !data.map.is_empty() && data.map != "<empty>";
         let update_data = data.tick_count != last_tick_count;
-    
+
         if ingame {
             if !update_data {
                 continue;
             }
+
+            log::debug!(
+                "tick {} map={} players={} bomb_dropped={} bomb_planted={} local_ctrl={:#x} local_pawn={:#x}",
+                data.tick_count,
+                data.map,
+                data.players.len(),
+                data.bomb_dropped,
+                data.bomb_planted,
+                data.local,
+                data.local_pawn
+            );
 
             let mut entity_data = Vec::new();
 
@@ -222,6 +234,15 @@ pub async fn run(radar_data: ArcRwlockRadarData, connector: Connector, pcileech_
                 data.bomb_defuse_length,
                 bomb_defuse_end
             );
+
+            let remote_empty = data.players.is_empty();
+            if remote_empty && !last_remote_players_empty {
+                log::warn!(
+                    "ingame tick {} found 0 remote players resolved; run with --loglevel debug for controller scan details",
+                    data.tick_count
+                );
+            }
+            last_remote_players_empty = remote_empty;
         } else {
             let mut radar = radar_data.write().await;
             *radar = RadarData::empty(freq);
