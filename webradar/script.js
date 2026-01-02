@@ -110,6 +110,55 @@ function mapCoordinates(coordinates) {
     return {x: offset_x, y: offset_y}
 }
 
+function formatPosition(pos) {
+    if (pos == null) {
+        return "n/a";
+    }
+
+    const toFixed = (value) => typeof value === "number" ? value.toFixed(2) : value;
+    return `x=${toFixed(pos.x)} y=${toFixed(pos.y)} z=${toFixed(pos.z)}`;
+}
+
+function extractAddressInfo(player) {
+    if (player == null || typeof player !== "object") {
+        return null;
+    }
+
+    const candidates = {
+        controller: player.controller ?? player.controllerAddr ?? player.controllerAddress,
+        pawn: player.pawn ?? player.pawnAddr ?? player.pawnAddress,
+        handle: player.handle ?? player.handleAddr ?? player.entityHandle,
+        address: player.address ?? player.addr,
+    };
+
+    const entries = Object.entries(candidates).filter(([, value]) => value !== undefined);
+    return entries.length > 0 ? Object.fromEntries(entries) : null;
+}
+
+function logRadarPayload(data) {
+    const entities = Array.isArray(data?.entityData) ? data.entityData : [];
+    const players = entities.filter((entity) => entity?.Player !== undefined);
+
+    console.group(
+        `[radarflow] received radar payload: ${players.length} players / ${entities.length} entities (freq=${data?.freq ?? "n/a"})`
+    );
+    console.log("[radarflow] raw entityData payload", entities);
+
+    players.forEach((entity, index) => {
+        const player = entity.Player;
+        const addressInfo = extractAddressInfo(player);
+        const addressLog = addressInfo == null ? "addresses: none provided" : `addresses: ${JSON.stringify(addressInfo)}`;
+
+        console.log(
+            `[radarflow] player[${index}] type=${player.playerType ?? "n/a"} pos=${formatPosition(player.pos)} yaw=${player.yaw ?? "n/a"} ` +
+            `dormant=${player.isDormant ?? false} hasBomb=${player.hasBomb ?? false} hasAwp=${player.hasAwp ?? false} scoped=${player.isScoped ?? false} ${addressLog}`,
+            player
+        );
+    });
+
+    console.groupEnd();
+}
+
 function render() {
     if (update) {
         fillCanvas()
@@ -467,7 +516,8 @@ function connect() {
                 console.log("[radarflow] Server had an unknown error")
             } else {
                 let data = JSON.parse(event.data);
-                radarData = data; 
+                logRadarPayload(data)
+                radarData = data;
                 freq = data.freq;
 
                 if (data.ingame == false) {

@@ -16,12 +16,49 @@ pub struct PlayerData {
     has_awp: bool,
 
     #[serde(rename = "isScoped")]
-    is_scoped: bool
+    is_scoped: bool,
+
+    #[serde(rename = "controllerAddr", skip_serializing_if = "Option::is_none")]
+    controller_addr: Option<u64>,
+
+    #[serde(rename = "pawnAddr", skip_serializing_if = "Option::is_none")]
+    pawn_addr: Option<u64>,
 }
 
 impl PlayerData {
     pub fn new(pos: Vec3, yaw: f32, player_type: PlayerType, has_bomb: bool, has_awp: bool, is_scoped: bool) -> PlayerData {
-        PlayerData { pos, yaw, player_type, has_bomb, has_awp, is_scoped }
+        PlayerData {
+            pos,
+            yaw,
+            player_type,
+            has_bomb,
+            has_awp,
+            is_scoped,
+            controller_addr: None,
+            pawn_addr: None,
+        }
+    }
+
+    pub fn with_addrs(
+        pos: Vec3,
+        yaw: f32,
+        player_type: PlayerType,
+        has_bomb: bool,
+        has_awp: bool,
+        is_scoped: bool,
+        controller: u64,
+        pawn: u64,
+    ) -> PlayerData {
+        PlayerData {
+            pos,
+            yaw,
+            player_type,
+            has_bomb,
+            has_awp,
+            is_scoped,
+            controller_addr: Some(controller),
+            pawn_addr: Some(pawn),
+        }
     }
 }
 

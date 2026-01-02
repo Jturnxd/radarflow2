@@ -171,13 +171,15 @@ pub async fn run(radar_data: ArcRwlockRadarData, connector: Connector, pcileech_
 
                 entity_data.push(
                     EntityData::Player(
-                        PlayerData::new(
-                            local_data.pos, 
+                        PlayerData::with_addrs(
+                            local_data.pos,
                             local_data.yaw,
                             PlayerType::Local,
                             has_bomb,
                             local_data.has_awp,
-                            local_data.is_scoped
+                            local_data.is_scoped,
+                            data.local,
+                            data.local_pawn
                         )
                     )
                 );
@@ -208,13 +210,15 @@ pub async fn run(radar_data: ArcRwlockRadarData, connector: Connector, pcileech_
 
                 entity_data.push(
                     EntityData::Player(
-                        PlayerData::new(
-                            player_data.pos, 
+                        PlayerData::with_addrs(
+                            player_data.pos,
                             player_data.yaw,
                             player_type,
                             has_bomb,
                             player_data.has_awp,
-                            player_data.is_scoped
+                            player_data.is_scoped,
+                            (*controller).into(),
+                            (*pawn).into()
                         )
                     )
                 );
