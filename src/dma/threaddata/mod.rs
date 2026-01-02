@@ -196,26 +196,8 @@ impl CsData {
             self.local_pawn
         );
 
-        for entry in controller_debug.iter() {
+        for entry in controller_debug {
             log::trace!("update_players detail: {}", entry);
-        }
-
-        if new_players.is_empty() {
-            let sample: String = controller_debug
-                .iter()
-                .cloned()
-                .take(6)
-                .collect::<Vec<String>>()
-                .join(" | ");
-
-            log::warn!(
-                "update_players resolved 0 remote controllers (highest_index={} map={} local={:#x} pawn={:#x}); sample scan: {}",
-                self.highest_index,
-                self.map,
-                self.local,
-                self.local_pawn,
-                sample
-            );
         }
 
         self.players = new_players;
